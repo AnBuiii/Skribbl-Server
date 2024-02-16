@@ -7,5 +7,5 @@ object ResponseMessages {
     const val ROOM_NOT_FOUND = "Room not found"
     const val PLAYER_ALREADY_JOINED = "A user with this username already joined"
     const val ROOM_FULL = "This room already full"
-
+    const val NO_SESSION = "No session"
 }
