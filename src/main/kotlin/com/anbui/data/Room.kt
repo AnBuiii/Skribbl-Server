@@ -29,4 +29,13 @@ class Room(
             }
         }
     }
+
+    /**
+     * Check if room contain this player's username
+     */
+    fun containPlayer(username: String): Boolean {
+        return players.any { player ->
+            player.username == username
+        }
+    }
 }
