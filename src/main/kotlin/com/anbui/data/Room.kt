@@ -1,6 +1,5 @@
-package com.anbui
+package com.anbui.data
 
-import com.anbui.data.Player
 import io.ktor.websocket.*
 import kotlinx.coroutines.isActive
 

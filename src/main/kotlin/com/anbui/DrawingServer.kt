@@ -1,14 +1,15 @@
 package com.anbui
 
 import com.anbui.data.Player
+import com.anbui.data.Room
 import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Represent the game server
  */
 class DrawingServer {
-    private val rooms = ConcurrentHashMap<String, Room>()
-    private val players = ConcurrentHashMap<String, Player>()
+    val rooms = ConcurrentHashMap<String, Room>()
+    val players = ConcurrentHashMap<String, Player>()
 
     /**
      * Insert new player

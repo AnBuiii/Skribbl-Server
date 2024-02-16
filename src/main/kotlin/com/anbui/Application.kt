@@ -7,6 +7,8 @@ fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
 }
 
+val server = DrawingServer()
+
 @Suppress("unused")
 fun Application.module() {
     configSession()
