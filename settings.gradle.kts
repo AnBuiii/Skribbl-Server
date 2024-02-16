@@ -1,1 +1,1 @@
-rootProject.name = "com.anbui.skribbl-server"
+rootProject.name = "Skribbl-Server"
