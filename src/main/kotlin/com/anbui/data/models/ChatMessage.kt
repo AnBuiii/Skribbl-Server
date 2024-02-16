@@ -1,5 +1,6 @@
 package com.anbui.data.models
 
+import com.anbui.utils.ModelType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
@@ -14,13 +15,20 @@ import kotlinx.serialization.modules.subclass
  * @param timeStamp when this message was sent
  */
 @Serializable
+@SerialName(ModelType.CHAT_MESSAGE)
 data class ChatMessage(
-    val to: String,
+    val from: String,
+    val roomName: String,
+    val message: String,
+    val timeStamp: Long
 ) : BaseModel()
 
+/**
+ * not use
+ */
 @Serializable
-@SerialName("NotChat")
-data class NotChat(
+@SerialName(ModelType.ANOTHER_CHAT_MESSAGE)
+data class NotBaseModel(
     val notFrom: String
 ) : BaseModel()
 
@@ -31,20 +39,9 @@ data class NotChat(
  */
 val baseModelSerializerModule = SerializersModule {
     polymorphic(BaseModel::class) {
-        subclass(NotChat::class)
+        subclass(NotBaseModel::class)
         defaultDeserializer { ChatMessage.serializer() }
     }
 }
-//
-//@Serializable
-//abstract class Project {
-//    abstract val name: String
-//}
-//
-//@Serializable
-//data class BasicProject(override val name: String, val type: String) : Project()
-//
-//@Serializable
-//@SerialName("OwnedProject")
-//data class OwnedProject(override val name: String, val owner: String) : Project()
+
 

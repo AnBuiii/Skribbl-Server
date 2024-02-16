@@ -39,36 +39,9 @@ fun Route.standardWebSocket(
             incoming.consumeEach { frame ->
                 if (frame is Frame.Text) {
                     val message = frame.readText()
-
-//                    val typeString = Json.encodeToJsonElement(message).jsonObject["type"].toString()
-
                     val format = Json { serializersModule = baseModelSerializerModule }
-
-                    val a = format.decodeFromString<BaseModel>(message)
-
-                    println(a)
-//                    when (a) {
-//                        is ChatMessage -> {
-//                            println("1 $a")
-//
-//                        }
-//
-//                        is NotChat -> {
-//                            println(a)
-//
-//                        }
-//                        else -> {
-//                            println("asdasd")
-//                        }
-//                    }
-
-
-//                    val a = Json.decodeFromString<Map<String, String>>(message)
-//                    val type = when (a["type"]) {
-//                        ModelType.CHAT_MESSAGE -> ChatMessage
-//                        else -> BaseModel
-//                    }
-//                    val payload = Json.decodeFromString<String>(message)
+                    val payload = format.decodeFromString<BaseModel>(message)
+                    handleFrame(this, session.sessionId, message, payload)
                 }
             }
         } catch (e: Exception) {
@@ -76,7 +49,5 @@ fun Route.standardWebSocket(
         } finally {
             // Handle disconnect
         }
-
-
     }
 }
