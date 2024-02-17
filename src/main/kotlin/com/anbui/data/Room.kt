@@ -36,15 +36,19 @@ class Room(
                 Phase.WAITING_FOR_PLAYER -> {
                     waitingForPlayer()
                 }
+
                 Phase.WAITING_FOR_START -> {
                     waitingForStart()
                 }
+
                 Phase.NEW_ROUND -> {
                     newRound()
                 }
+
                 Phase.GAME_RUNNING -> {
                     gameRunning()
                 }
+
                 Phase.SHOW_WORD -> {
                     showWord()
                 }
@@ -115,7 +119,6 @@ class Room(
 
     }
 
-
     enum class Phase {
         WAITING_FOR_PLAYER,
         WAITING_FOR_START,
@@ -123,4 +126,6 @@ class Room(
         GAME_RUNNING,
         SHOW_WORD
     }
+
+
 }
