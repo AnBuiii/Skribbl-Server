@@ -2,7 +2,7 @@ package com.anbui.routes
 
 import com.anbui.data.Player
 import com.anbui.data.Room
-import com.anbui.data.models.*
+import com.anbui.data.models.clientMessage.*
 import com.anbui.server
 import com.anbui.session.DrawingSession
 import com.anbui.utils.ResponseMessages
@@ -16,7 +16,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * input for game
+ * This function handle *payload* data sent from player to websocket server.
+ * when the *payload* is
+ * - [JoinRoomHandshake]:
+ * - [DrawData] :
+ * - [ChosenWord]:
+ *
  */
 fun Route.gameWebSocketRoute() {
     standardWebSocket("/ws/draw") { socket, clientId, message, payload ->
@@ -43,7 +48,11 @@ fun Route.gameWebSocketRoute() {
                 if (room.phase == Room.Phase.GAME_RUNNING) {
                     room.broadcastToAllExcept(message, clientId)
                 }
-                println(payload)
+            }
+
+            is ChosenWord -> {
+                val room = server.rooms[payload.roomName] ?: return@standardWebSocket
+                room.setWordAndSwitchToGameRunning(payload.chosenWord)
             }
 
             is ChatMessage -> {

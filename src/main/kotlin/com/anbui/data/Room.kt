@@ -1,7 +1,8 @@
 package com.anbui.data
 
-import com.anbui.data.models.Announcement
-import com.anbui.data.models.PhaseChange
+import com.anbui.data.models.clientMessage.Announcement
+import com.anbui.data.models.clientMessage.ChosenWord
+import com.anbui.data.models.clientMessage.PhaseChange
 import com.anbui.utils.Constants
 import com.anbui.utils.ResponseMessages
 import io.ktor.websocket.*
@@ -27,6 +28,16 @@ class Room(
      * Current drawing player
      */
     private var drawingPlayer: Player? = null
+
+    /**
+     * Players who guess it at current row
+     */
+    private var winningPLayer: List<String> = emptyList()
+
+    /**
+     * The word
+     */
+    private var word: String? = null
 
     /**
      * listener for phase change
@@ -73,8 +84,8 @@ class Room(
     }
 
     /**
-     * Add new player to the room and update the current phase.
-     * Players are shuffled in waiting for start phase to make game fair
+     * Add new player to the room and update [phase].
+     * [players] are shuffled in [Phase.WAITING_FOR_START] to make game fair
      */
     suspend fun addPlayer(clientId: String, username: String, socketSession: WebSocketSession): Player {
         val player = Player(username = username, socket = socketSession, clientId = clientId)
@@ -101,7 +112,10 @@ class Room(
     }
 
     /**
-     * function to set timer and notify client once and while with new time to synchronize timer
+     * Function to set timer and notify all player in order to synchronise their timer.
+     * Every [UPDATE_TIME_FREQUENCY] millisecond, this function will send broadcast once while player synchronise
+     * their timer. After [ms], the next [phase] occur
+     * @param ms this [phase] delay
      */
     @OptIn(DelicateCoroutinesApi::class)
     private fun timeAndNotify(ms: Long) {
@@ -132,7 +146,7 @@ class Room(
     }
 
     /**
-     * Send message to all player in room if they are active
+     * Send [message] to all player in room if they are active
      */
     suspend fun broadcast(message: String) {
         players.forEach { player ->
@@ -151,7 +165,16 @@ class Room(
     }
 
     /**
-     * Check if room contain this player's username
+     * Draw player chose a word and [phase] change to [Phase.GAME_RUNNING]
+     */
+    fun setWordAndSwitchToGameRunning(word: String){
+        this.word = word
+        phase = Phase.GAME_RUNNING
+
+    }
+
+    /**
+     * Check if room contain this player's [username]
      */
     fun containPlayer(username: String): Boolean {
         return players.any { player ->
@@ -195,6 +218,7 @@ class Room(
 
     }
 
+
     /**
      *
      */
@@ -203,10 +227,27 @@ class Room(
     }
 
     /**
-     *
+     *  At the end of game, sent the chosen word to players. If nobody guess it, the draw player get penalty
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun showWord() {
-
+        GlobalScope.launch {
+            if (winningPLayer.isEmpty()) {
+                drawingPlayer?.let {
+                    it.score -= PENALTY_NOBODY_GUESS_IT
+                }
+            }
+            word?.let {
+                val chosenWord = ChosenWord
+                broadcast(Json.encodeToString(chosenWord))
+            }
+            timeAndNotify(DELAY_SHOW_WORD_TO_NEW_ROUND)
+            val phaseChange = PhaseChange(
+                Phase.SHOW_WORD,
+                DELAY_WAITING_FOR_START_NEW_ROUND
+            )
+            broadcast(Json.encodeToString(phaseChange))
+        }
     }
 
     enum class Phase {
@@ -223,5 +264,6 @@ class Room(
         const val DELAY_NEW_ROUND_TO_GAME_RUNNING = 20000L
         const val DELAY_GAME_RUNNING_TO_SHOW_WORD = 60000L
         const val DELAY_SHOW_WORD_TO_NEW_ROUND = 10000L
+        const val PENALTY_NOBODY_GUESS_IT = 50
     }
 }

@@ -1,4 +1,4 @@
-package com.anbui.data.models
+package com.anbui.data.models.clientMessage
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

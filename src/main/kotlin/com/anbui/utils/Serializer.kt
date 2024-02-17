@@ -1,6 +1,6 @@
 package com.anbui.utils
 
-import com.anbui.data.models.*
+import com.anbui.data.models.clientMessage.*
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
@@ -18,6 +18,7 @@ val baseModelSerializerModule = SerializersModule {
         subclass(JoinRoomHandshake::class)
         subclass(GameError::class)
         subclass(PhaseChange::class)
+        subclass(ChosenWord::class)
         defaultDeserializer { NotBaseModel.serializer() }
     }
 }
