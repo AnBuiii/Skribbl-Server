@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * *Information*
+ * Represent join room message send by client
  */
 @Serializable
 @SerialName(BaseModel.JOIN_ROOM_HANDSHAKE)

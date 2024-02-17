@@ -19,6 +19,7 @@ abstract class BaseModel {
         const val ANNOUNCEMENT = "TYPE_ANNOUNCEMENT"
         const val JOIN_ROOM_HANDSHAKE = "TYPE_JOIN_ROOM_HANDSHAKE"
         const val GAME_ERROR = "TYPE_GAME_ERROR"
+        const val PHASE_CHANGE = "TYPE_PHASE_CHANGE"
     }
 }
 

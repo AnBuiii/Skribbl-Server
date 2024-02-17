@@ -1,10 +1,11 @@
 package com.anbui.data
 
 import com.anbui.data.models.Announcement
+import com.anbui.data.models.PhaseChange
 import com.anbui.utils.Constants
 import com.anbui.utils.ResponseMessages
 import io.ktor.websocket.*
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -16,6 +17,16 @@ class Room(
     val maxPlayer: Int,
     var players: List<Player> = listOf()
 ) {
+
+    /**
+     * Job for game's countdown timer
+     */
+    private var timerJob: Job? = null
+
+    /**
+     * Current drawing player
+     */
+    private var drawingPlayer: Player? = null
 
     /**
      * listener for phase change
@@ -90,6 +101,37 @@ class Room(
     }
 
     /**
+     * function to set timer and notify client once and while with new time to synchronize timer
+     */
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun timeAndNotify(ms: Long) {
+        timerJob?.cancel()
+        timerJob = GlobalScope.launch {
+            val phaseChange = PhaseChange(
+                phase,
+                ms,
+                drawingPlayer?.username
+            )
+            repeat((ms / UPDATE_TIME_FREQUENCY).toInt()) {
+                if (it != 0) {
+                    phaseChange.phase = null
+                }
+                broadcast(Json.encodeToString(phaseChange))
+                phaseChange.timeStamp -= UPDATE_TIME_FREQUENCY
+                delay(UPDATE_TIME_FREQUENCY)
+            }
+
+            phase = when (phase) {
+                Phase.WAITING_FOR_PLAYER -> Phase.NEW_ROUND
+                Phase.NEW_ROUND -> Phase.GAME_RUNNING
+                Phase.GAME_RUNNING -> Phase.SHOW_WORD
+                Phase.SHOW_WORD -> Phase.NEW_ROUND
+                else -> Phase.WAITING_FOR_PLAYER
+            }
+        }
+    }
+
+    /**
      * Send message to all player in room if they are active
      */
     suspend fun broadcast(message: String) {
@@ -118,17 +160,32 @@ class Room(
     }
 
     /**
-     *
+     * Begin phase, notify players there is one player is waiting in room
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun waitingForPlayer() {
-
+        GlobalScope.launch {
+            val phaseChange = PhaseChange(
+                Phase.WAITING_FOR_PLAYER,
+                DELAY_WAITING_FOR_START_NEW_ROUND
+            )
+            broadcast(Json.encodeToString(phaseChange))
+        }
     }
 
     /**
-     *
+     * After second player join, start timer to start game
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun waitingForStart() {
-
+        timeAndNotify(DELAY_WAITING_FOR_START_NEW_ROUND)
+        GlobalScope.launch {
+            val phaseChange = PhaseChange(
+                Phase.WAITING_FOR_PLAYER,
+                DELAY_WAITING_FOR_START_NEW_ROUND
+            )
+            broadcast(Json.encodeToString(phaseChange))
+        }
     }
 
     /**
@@ -160,4 +217,11 @@ class Room(
         SHOW_WORD
     }
 
+    companion object {
+        const val UPDATE_TIME_FREQUENCY = 1000L
+        const val DELAY_WAITING_FOR_START_NEW_ROUND = 10000L
+        const val DELAY_NEW_ROUND_TO_GAME_RUNNING = 20000L
+        const val DELAY_GAME_RUNNING_TO_SHOW_WORD = 60000L
+        const val DELAY_SHOW_WORD_TO_NEW_ROUND = 10000L
+    }
 }

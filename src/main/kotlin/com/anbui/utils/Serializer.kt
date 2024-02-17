@@ -17,6 +17,7 @@ val baseModelSerializerModule = SerializersModule {
         subclass(Announcement::class)
         subclass(JoinRoomHandshake::class)
         subclass(GameError::class)
+        subclass(PhaseChange::class)
         defaultDeserializer { NotBaseModel.serializer() }
     }
 }
