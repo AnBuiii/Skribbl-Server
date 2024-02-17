@@ -21,6 +21,7 @@ abstract class BaseModel {
         const val GAME_ERROR = "TYPE_GAME_ERROR"
         const val PHASE_CHANGE = "TYPE_PHASE_CHANGE"
         const val CHOSEN_WORD = "TYPE_CHOSEN_WORD"
+        const val GAME_STATE = "TYPE_GAME_STATE"
     }
 }
 

@@ -2,9 +2,12 @@ package com.anbui.data
 
 import com.anbui.data.models.clientMessage.Announcement
 import com.anbui.data.models.clientMessage.ChosenWord
+import com.anbui.data.models.clientMessage.GameState
 import com.anbui.data.models.clientMessage.PhaseChange
 import com.anbui.utils.Constants
 import com.anbui.utils.ResponseMessages
+import com.anbui.utils.transformToUnderscores
+import com.anbui.utils.words
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
@@ -38,6 +41,11 @@ class Room(
      * The word
      */
     private var word: String? = null
+
+    /**
+     *
+     */
+    private var curWords: List<String>? = null
 
     /**
      * listener for phase change
@@ -167,7 +175,7 @@ class Room(
     /**
      * Draw player chose a word and [phase] change to [Phase.GAME_RUNNING]
      */
-    fun setWordAndSwitchToGameRunning(word: String){
+    fun setWordAndSwitchToGameRunning(word: String) {
         this.word = word
         phase = Phase.GAME_RUNNING
 
@@ -220,10 +228,32 @@ class Room(
 
 
     /**
-     *
+     * This function run when [phase] change to [Phase.GAME_RUNNING].
+     * Drawing player choose 1 [word] from [curWords], or else 1 word will be got randomly from [static resources][words]).
+     * Send message with [transformToUnderscores] word to other player, except the drawing player
+     * will be sent the [word]
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun gameRunning() {
-
+        winningPLayer = emptyList()
+        val wordToSend = word ?: curWords?.random() ?: words.random()
+        val transformedWord = wordToSend.transformToUnderscores()
+        val drawingUsername = (drawingPlayer ?: players.random()).username
+        val gameStateForDrawingPlayer = GameState(
+            drawingUsername,
+            wordToSend
+        )
+        val gameStateForGuessPlayer = GameState(
+            drawingUsername,
+            transformedWord
+        )
+        GlobalScope.launch {
+            broadcastToAllExcept(
+                Json.encodeToString(gameStateForGuessPlayer),
+                (drawingPlayer ?: players.random()).clientId
+            )
+            drawingPlayer?.socket?.send(Frame.Text(Json.encodeToString(gameStateForDrawingPlayer)))
+        }
     }
 
     /**
