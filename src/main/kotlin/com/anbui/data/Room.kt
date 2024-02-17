@@ -1,7 +1,12 @@
 package com.anbui.data
 
+import com.anbui.data.models.Announcement
+import com.anbui.utils.Constants
+import com.anbui.utils.ResponseMessages
 import io.ktor.websocket.*
 import kotlinx.coroutines.isActive
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Represent the room
@@ -54,6 +59,34 @@ class Room(
                 }
             }
         }
+    }
+
+    /**
+     * Add new player to the room and update the current phase.
+     * Players are shuffled in waiting for start phase to make game fair
+     */
+    suspend fun addPlayer(clientId: String, username: String, socketSession: WebSocketSession): Player {
+        val player = Player(username = username, socket = socketSession, clientId = clientId)
+        players = players + player
+
+        if (players.size == 1) {
+            phase = Phase.WAITING_FOR_PLAYER
+        } else if (players.size == Constants.MIN_ROOM_SIZE && phase == Phase.WAITING_FOR_PLAYER) {
+            phase = Phase.WAITING_FOR_START
+            players = players.shuffled()
+        } else if (players.size == Constants.MAX_ROOM_SIZE && phase == Phase.WAITING_FOR_START) {
+            phase = Phase.NEW_ROUND
+            players = players.shuffled()
+        }
+
+        val announcement = Announcement(
+            message = "$username ${ResponseMessages.PLAYER_JOIN}",
+            System.currentTimeMillis(),
+            Announcement.PLAYER_JOINED
+        )
+
+        broadcast(Json.encodeToString(announcement))
+        return player
     }
 
     /**
@@ -126,6 +159,5 @@ class Room(
         GAME_RUNNING,
         SHOW_WORD
     }
-
 
 }

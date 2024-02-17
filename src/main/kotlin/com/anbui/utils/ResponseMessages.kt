@@ -1,5 +1,8 @@
 package com.anbui.utils
 
+/**
+ * Message send by server
+ */
 object ResponseMessages {
     const val ROOM_NAME_EXIST = "Room name already exists"
     const val VIOLATE_MIN_ROOM_SIZE = "The minimum room size is ${Constants.MIN_ROOM_SIZE}"
@@ -8,4 +11,5 @@ object ResponseMessages {
     const val PLAYER_ALREADY_JOINED = "A user with this username already joined"
     const val ROOM_FULL = "This room already full"
     const val NO_SESSION = "No session"
+    const val PLAYER_JOIN = "joined the party"
 }

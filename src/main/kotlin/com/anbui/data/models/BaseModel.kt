@@ -1,23 +1,32 @@
 package com.anbui.data.models
 
-import com.anbui.utils.ModelType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.polymorphic
-import kotlinx.serialization.modules.subclass
 
 /**
  *  Standard for websocket's data
  */
 @Serializable
-abstract class BaseModel
+abstract class BaseModel {
+    companion object {
+        /**
+         * SerialName for Kotlin serialization
+         */
+        const val NOT_BASE_MODEL = "NOT_BASE_MODEL"
+
+        const val CHAT_MESSAGE = "TYPE_CHAT_MESSAGE"
+        const val DRAW_DATA = "TYPE_DRAW_DATA"
+        const val ANNOUNCEMENT = "TYPE_ANNOUNCEMENT"
+        const val JOIN_ROOM_HANDSHAKE = "TYPE_JOIN_ROOM_HANDSHAKE"
+        const val GAME_ERROR = "TYPE_GAME_ERROR"
+    }
+}
 
 /**
  * not use
  */
 @Serializable
-@SerialName(ModelType.NOT_BASE_MODEL)
+@SerialName(BaseModel.NOT_BASE_MODEL)
 data class NotBaseModel(
     val notFrom: String
 ) : BaseModel()
@@ -30,7 +39,7 @@ data class NotBaseModel(
  * @param timeStamp when this message was sent
  */
 @Serializable
-@SerialName(ModelType.CHAT_MESSAGE)
+@SerialName(BaseModel.CHAT_MESSAGE)
 data class ChatMessage(
     val from: String,
     val roomName: String,
@@ -51,7 +60,7 @@ data class ChatMessage(
  *
  */
 @Serializable
-@SerialName(ModelType.DRAW_DATA)
+@SerialName(BaseModel.DRAW_DATA)
 data class DrawData(
     val roomName: String,
     val color: Int,
@@ -64,15 +73,3 @@ data class DrawData(
 ) : BaseModel()
 
 
-/**
- * Polymorphic type handler for [BaseModel]
- * To deserialize BaseModel subclass, data from json MUST have type parameter, like { "type" : "ChatMessage" }, mapping
- * to which type it will deserialize to
- */
-val baseModelSerializerModule = SerializersModule {
-    polymorphic(BaseModel::class) {
-        subclass(ChatMessage::class)
-        subclass(DrawData::class)
-        defaultDeserializer { NotBaseModel.serializer() }
-    }
-}
