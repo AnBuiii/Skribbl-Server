@@ -1,13 +1,7 @@
 package com.anbui.data
 
-import com.anbui.data.models.clientMessage.Announcement
-import com.anbui.data.models.clientMessage.ChosenWord
-import com.anbui.data.models.clientMessage.GameState
-import com.anbui.data.models.clientMessage.PhaseChange
-import com.anbui.utils.Constants
-import com.anbui.utils.ResponseMessages
-import com.anbui.utils.transformToUnderscores
-import com.anbui.utils.words
+import com.anbui.data.models.clientMessage.*
+import com.anbui.utils.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
@@ -38,14 +32,19 @@ class Room(
     private var winningPLayer: List<String> = emptyList()
 
     /**
-     * The word
+     * The word player have to guess
      */
     private var word: String? = null
 
     /**
-     *
+     * Random word from [words] that [drawingPlayer] have to pick one and it will become [word]
      */
     private var curWords: List<String>? = null
+
+    /**
+     * Index of current [drawingPlayer] in [players]
+     */
+    private var drawPlayerIndex: Int = 0
 
     /**
      * listener for phase change
@@ -220,10 +219,19 @@ class Room(
     }
 
     /**
-     *
+     * At [Phase.NEW_ROUND], new [drawingPlayer] is picked and [GUESS_WORD_SIZE] words are sent to that player.
+     * That player has [DELAY_WAITING_FOR_START_NEW_ROUND] ms to pick [word]
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun newRound() {
-
+        curWords = getRandomWord(GUESS_WORD_SIZE).also { randomWords ->
+            val newWords = NewWords(randomWords)
+            nextDrawingPlayer()
+            GlobalScope.launch {
+                drawingPlayer?.socket?.send(Frame.Text(Json.encodeToString(newWords)))
+                timeAndNotify(DELAY_NEW_ROUND_TO_GAME_RUNNING)
+            }
+        }
     }
 
 
@@ -280,6 +288,19 @@ class Room(
         }
     }
 
+    private fun nextDrawingPlayer() {
+        drawingPlayer?.isDrawing = false
+
+        if (players.isEmpty()) return
+
+        drawingPlayer = if (drawPlayerIndex <= players.size - 1) {
+            players[drawPlayerIndex]
+        } else players.last()
+
+        if (drawPlayerIndex < players.size - 1) drawPlayerIndex++
+        else drawPlayerIndex = 0
+    }
+
     enum class Phase {
         WAITING_FOR_PLAYER,
         WAITING_FOR_START,
@@ -295,5 +316,6 @@ class Room(
         const val DELAY_GAME_RUNNING_TO_SHOW_WORD = 60000L
         const val DELAY_SHOW_WORD_TO_NEW_ROUND = 10000L
         const val PENALTY_NOBODY_GUESS_IT = 50
+        const val GUESS_WORD_SIZE = 3
     }
 }

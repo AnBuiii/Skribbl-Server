@@ -20,6 +20,7 @@ val baseModelSerializerModule = SerializersModule {
         subclass(PhaseChange::class)
         subclass(ChosenWord::class)
         subclass(GameState::class)
+        subclass(NewWords::class)
         defaultDeserializer { NotBaseModel.serializer() }
     }
 }

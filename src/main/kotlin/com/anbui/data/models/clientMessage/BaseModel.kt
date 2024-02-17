@@ -1,6 +1,5 @@
 package com.anbui.data.models.clientMessage
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,16 +21,8 @@ abstract class BaseModel {
         const val PHASE_CHANGE = "TYPE_PHASE_CHANGE"
         const val CHOSEN_WORD = "TYPE_CHOSEN_WORD"
         const val GAME_STATE = "TYPE_GAME_STATE"
+        const val NEW_WORD = "TYPE_NEW_WORD"
     }
 }
-
-/**
- * This class is NOT IN USE
- */
-@Serializable
-@SerialName(BaseModel.NOT_BASE_MODEL)
-data class NotBaseModel(
-    val notFrom: String
-) : BaseModel()
 
 
