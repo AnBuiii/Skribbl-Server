@@ -359,6 +359,38 @@ class Room(
         return false
     }
 
+
+    /**
+     * Notify a player join room about current game state.
+     * No matter that player join on which [phase]
+     */
+    suspend fun sendWordToPlayer(player: Player) {
+        val delay = when (phase) {
+            Phase.WAITING_FOR_START -> DELAY_WAITING_FOR_START_NEW_ROUND
+            Phase.NEW_ROUND -> DELAY_NEW_ROUND_TO_GAME_RUNNING
+            Phase.GAME_RUNNING -> DELAY_GAME_RUNNING_TO_SHOW_WORD
+            Phase.SHOW_WORD -> DELAY_SHOW_WORD_TO_NEW_ROUND
+            else -> 0L
+        }
+        val phaseChange = PhaseChange(phase, delay, drawingPlayer?.username)
+        word?.let { w ->
+            drawingPlayer?.let { p ->
+                val gameState = GameState(
+                    p.username,
+                    if (p.isDrawing || phase == Phase.SHOW_WORD) {
+                        w
+                    } else {
+                        w.transformToUnderscores()
+                    }
+                )
+
+                player.socket.send(Frame.Text(Json.encodeToString(gameState)))
+            }
+        }
+        player.socket.send(Frame.Text(Json.encodeToString(Json.encodeToString(phaseChange))))
+
+    }
+
     private fun nextDrawingPlayer() {
         drawingPlayer?.isDrawing = false
 

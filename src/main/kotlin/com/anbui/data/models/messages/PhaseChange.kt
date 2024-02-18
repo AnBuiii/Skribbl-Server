@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  * Represent phase change message sent by SERVER
  * @param phase current
  * @param timeStamp delay time to next phase in milliseconds
- * @param drawingPlayer player that cause phase change
+ * @param drawingPlayer player who draw
  */
 @Serializable
 @SerialName(BaseModel.PHASE_CHANGE)
