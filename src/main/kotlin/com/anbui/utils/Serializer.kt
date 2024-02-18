@@ -1,6 +1,6 @@
 package com.anbui.utils
 
-import com.anbui.data.models.clientMessage.*
+import com.anbui.data.models.messages.*
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass

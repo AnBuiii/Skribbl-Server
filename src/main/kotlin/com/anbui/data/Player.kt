@@ -2,6 +2,12 @@ package com.anbui.data
 
 import io.ktor.websocket.*
 
+/**
+ * Represent a player of this game
+ * @param username unique username
+ * @param socket
+ * @param clientId uni
+ */
 data class Player(
     val username: String,
     val socket: WebSocketSession,

@@ -5,6 +5,10 @@ import io.ktor.server.application.*
 import io.ktor.server.sessions.*
 import io.ktor.util.*
 
+/**
+ * Config basic [Sessions] for SERVER
+ * @see DrawingSession
+ */
 fun Application.configSession() {
     install(Sessions) {
         cookie<DrawingSession>("SESSIONS")

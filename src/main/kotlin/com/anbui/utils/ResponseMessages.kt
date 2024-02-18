@@ -12,4 +12,6 @@ object ResponseMessages {
     const val ROOM_FULL = "This room already full"
     const val NO_SESSION = "No session"
     const val PLAYER_JOIN = "joined the party"
+    const val GUESS_IT = "has guess it"
+    const val EVERY_ONE_GUESS_IT = "Everybody guess it, New round starting..."
 }

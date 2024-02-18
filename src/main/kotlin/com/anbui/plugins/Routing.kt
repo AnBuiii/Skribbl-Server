@@ -7,6 +7,9 @@ import com.anbui.routes.joinRoomRoute
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 
+/**
+ * Define all route for this Server
+ */
 fun Application.configureRouting() {
     routing {
         createRoomRoute()

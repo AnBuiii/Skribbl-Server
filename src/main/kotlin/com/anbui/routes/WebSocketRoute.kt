@@ -2,7 +2,7 @@ package com.anbui.routes
 
 import com.anbui.data.Player
 import com.anbui.data.Room
-import com.anbui.data.models.clientMessage.*
+import com.anbui.data.models.messages.*
 import com.anbui.server
 import com.anbui.session.DrawingSession
 import com.anbui.utils.ResponseMessages
@@ -56,7 +56,10 @@ fun Route.gameWebSocketRoute() {
             }
 
             is ChatMessage -> {
-
+                val room = server.rooms[payload.roomName] ?: return@standardWebSocket
+                if (!room.checkWordAndNotifyPlayer(payload)) {
+                    room.broadcast(message)
+                }
             }
         }
     }
@@ -87,6 +90,8 @@ fun Route.standardWebSocket(
             )
             return@webSocket
         }
+
+        println(session)
 
         try {
             incoming.consumeEach { frame ->

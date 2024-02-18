@@ -1,6 +1,6 @@
 package com.anbui.data
 
-import com.anbui.data.models.clientMessage.*
+import com.anbui.data.models.messages.*
 import com.anbui.utils.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
@@ -27,9 +27,9 @@ class Room(
     private var drawingPlayer: Player? = null
 
     /**
-     * Players who guess it at current row
+     * Username of all players who guess it at current row
      */
-    private var winningPLayer: List<String> = emptyList()
+    private var winningPLayers: List<String> = emptyList()
 
     /**
      * The word player have to guess
@@ -45,6 +45,11 @@ class Room(
      * Index of current [drawingPlayer] in [players]
      */
     private var drawPlayerIndex: Int = 0
+
+    /**
+     * Start time for phase change
+     */
+    private var startTime = 0L
 
     /**
      * listener for phase change
@@ -128,6 +133,7 @@ class Room(
     private fun timeAndNotify(ms: Long) {
         timerJob?.cancel()
         timerJob = GlobalScope.launch {
+            startTime = System.currentTimeMillis()
             val phaseChange = PhaseChange(
                 phase,
                 ms,
@@ -150,6 +156,17 @@ class Room(
                 else -> Phase.WAITING_FOR_PLAYER
             }
         }
+    }
+
+    /**
+     * Check if [ChatMessage] sent by player match with [word] in [Phase.GAME_RUNNING].
+     * Guess from [winningPLayers] and [drawingPlayer] always false
+     */
+    private fun isGuessCorrect(guess: ChatMessage): Boolean {
+        return guess.isMatchesWord(word ?: return false)
+                && !winningPLayers.contains(guess.from)
+                && drawingPlayer?.username != guess.from
+                && phase == Phase.GAME_RUNNING
     }
 
     /**
@@ -177,7 +194,6 @@ class Room(
     fun setWordAndSwitchToGameRunning(word: String) {
         this.word = word
         phase = Phase.GAME_RUNNING
-
     }
 
     /**
@@ -243,7 +259,7 @@ class Room(
      */
     @OptIn(DelicateCoroutinesApi::class)
     private fun gameRunning() {
-        winningPLayer = emptyList()
+        winningPLayers = emptyList()
         val wordToSend = word ?: curWords?.random() ?: words.random()
         val transformedWord = wordToSend.transformToUnderscores()
         val drawingUsername = (drawingPlayer ?: players.random()).username
@@ -270,7 +286,7 @@ class Room(
     @OptIn(DelicateCoroutinesApi::class)
     private fun showWord() {
         GlobalScope.launch {
-            if (winningPLayer.isEmpty()) {
+            if (winningPLayers.isEmpty()) {
                 drawingPlayer?.let {
                     it.score -= PENALTY_NOBODY_GUESS_IT
                 }
@@ -286,6 +302,61 @@ class Room(
             )
             broadcast(Json.encodeToString(phaseChange))
         }
+    }
+
+    /**
+     *
+     */
+    private fun addWiningPlayer(username: String): Boolean {
+        winningPLayers = winningPLayers + username
+        if (winningPLayers.size == players.size - 1) {
+            phase = Phase.NEW_ROUND
+            return true
+        }
+        return false
+    }
+
+    /**
+     * If some player guess [word] successfully, that player is added to [winningPLayers] and receive some point.
+     * [drawingPlayer] also receive some point.
+     * An [Announcement] is [broadcast] to all player. A round over announcement also be sent if everyone guess it.
+     */
+    suspend fun checkWordAndNotifyPlayer(message: ChatMessage): Boolean {
+        if (isGuessCorrect(message)) {
+            val currentTime = System.currentTimeMillis()
+            val guessingTime = currentTime - startTime
+            val timePercentageLeft = 1f - guessingTime.toFloat() / DELAY_GAME_RUNNING_TO_SHOW_WORD
+
+            val score = GUESS_SCORE + GUESS_SCORE_PERCENTAGE_MULTIPLIER * timePercentageLeft
+            val player = players.find { it.username == message.from }
+
+            player?.let {
+                it.score += score.toInt()
+            }
+            drawingPlayer?.let {
+                it.score += GUESS_SCORE_FOR_DRAWING_PLAYER / players.size
+            }
+
+            val announcement = Announcement(
+                message = "${message.from} ${ResponseMessages.GUESS_IT}",
+                timeStamp = currentTime,
+                announcementType = Announcement.PLAYER_GUEST_WORD
+            )
+
+            broadcast(Json.encodeToString(announcement))
+
+            val isRoundOver = addWiningPlayer(message.from)
+
+            if (isRoundOver) {
+                val roundOverAnnouncement = Announcement(
+                    message = ResponseMessages.EVERY_ONE_GUESS_IT,
+                    timeStamp = System.currentTimeMillis(),
+                    announcementType = Announcement.EVERY_BODY_GUESS_IT
+                )
+                broadcast(Json.encodeToString(roundOverAnnouncement))
+            }
+        }
+        return false
     }
 
     private fun nextDrawingPlayer() {
@@ -317,5 +388,14 @@ class Room(
         const val DELAY_SHOW_WORD_TO_NEW_ROUND = 10000L
         const val PENALTY_NOBODY_GUESS_IT = 50
         const val GUESS_WORD_SIZE = 3
+
+        const val GUESS_SCORE = 50
+
+        /**
+         * If a player guess the word with less than [GUESS_SCORE_PERCENTAGE_MULTIPLIER]% time, they receive more score
+         */
+        const val GUESS_SCORE_PERCENTAGE_MULTIPLIER = 50
+
+        const val GUESS_SCORE_FOR_DRAWING_PLAYER = 50
     }
 }

@@ -1,4 +1,4 @@
-package com.anbui.data.models.clientMessage
+package com.anbui.data.models.messages
 
 import com.anbui.data.Room
 import kotlinx.serialization.SerialName

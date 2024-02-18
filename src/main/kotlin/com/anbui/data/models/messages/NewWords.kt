@@ -1,10 +1,11 @@
-package com.anbui.data.models.clientMessage
+package com.anbui.data.models.messages
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
  * Present message of list of words drawing player will choose from
+ * Send by SERVER
  */
 @Serializable
 @SerialName(BaseModel.NEW_WORD)
