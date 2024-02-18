@@ -14,4 +14,5 @@ object ResponseMessages {
     const val PLAYER_JOIN = "joined the party"
     const val GUESS_IT = "has guess it"
     const val EVERY_ONE_GUESS_IT = "Everybody guess it, New round starting..."
+    const val PLAYER_LEFT = "left the party :("
 }

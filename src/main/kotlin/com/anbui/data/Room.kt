@@ -1,11 +1,13 @@
 package com.anbui.data
 
 import com.anbui.data.models.messages.*
+import com.anbui.server
 import com.anbui.utils.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Represent the room
@@ -50,6 +52,19 @@ class Room(
      * Start time for phase change
      */
     private var startTime = 0L
+
+    /**
+     * Save [clientId][Player.clientId] of player who disconnect map with remove [Job].
+     * The [job] will delay some time
+     *
+     * Sample: After a player disconnect for 30sec, that player will be removed from this room.
+     */
+    private val playerRemoveJobs = ConcurrentHashMap<String, Job>()
+
+    /**
+     * Save all players had leaved with their index
+     */
+    private val leftPlayer = ConcurrentHashMap<String, PlayerWithIndex>()
 
     /**
      * listener for phase change
@@ -119,8 +134,53 @@ class Room(
             Announcement.PLAYER_JOINED
         )
 
+        sendWordToPlayer(player)
+        broadcastPlayersState()
         broadcast(Json.encodeToString(announcement))
         return player
+    }
+
+    /**
+     * remove player from [players]
+     * @param clientId
+     */
+    @OptIn(DelicateCoroutinesApi::class)
+    fun removePlayer(clientId: String) {
+        val player = players.find { it.clientId == clientId } ?: return
+        val index = players.indexOf(player)
+
+        leftPlayer[clientId] = player to index
+        players = players - player
+
+        playerRemoveJobs[clientId] = GlobalScope.launch {
+            delay(PLAYER_REMOVE_TIME)
+            leftPlayer.remove(clientId)
+            val playerToRemove = leftPlayer[clientId]
+
+            playerToRemove?.let {
+                players = players - it.first
+            }
+
+            playerRemoveJobs.remove(clientId)
+        }
+        val announcement = Announcement(
+            "${player.username} ${ResponseMessages.PLAYER_LEFT}",
+            System.currentTimeMillis(),
+            Announcement.PLAYER_LEFT
+        )
+
+        GlobalScope.launch {
+            broadcastPlayersState()
+            broadcast(Json.encodeToString(announcement))
+
+            if (players.size == 1) {
+                phase = Phase.WAITING_FOR_PLAYER
+                timerJob?.cancel()
+            } else if (players.isEmpty()) {
+                kill()
+                server.rooms.remove(name)
+            }
+        }
     }
 
     /**
@@ -291,6 +351,7 @@ class Room(
                     it.score -= PENALTY_NOBODY_GUESS_IT
                 }
             }
+            broadcastPlayersState()
             word?.let {
                 val chosenWord = ChosenWord
                 broadcast(Json.encodeToString(chosenWord))
@@ -337,6 +398,8 @@ class Room(
                 it.score += GUESS_SCORE_FOR_DRAWING_PLAYER / players.size
             }
 
+            broadcastPlayersState()
+
             val announcement = Announcement(
                 message = "${message.from} ${ResponseMessages.GUESS_IT}",
                 timeStamp = currentTime,
@@ -359,6 +422,22 @@ class Room(
         return false
     }
 
+    /**
+     * broadcast all players current state sort by their score
+     */
+    private suspend fun broadcastPlayersState() {
+        val playerList = players
+            .sortedByDescending(Player::score)
+            .mapIndexed { idx, player ->
+                PlayerData(
+                    username = player.username,
+                    isDrawing = player.isDrawing,
+                    score = player.score,
+                    rank = idx + 1
+                )
+            }
+        broadcast(Json.encodeToString(playerList))
+    }
 
     /**
      * Notify a player join room about current game state.
@@ -404,6 +483,15 @@ class Room(
         else drawPlayerIndex = 0
     }
 
+    /**
+     * Call this function when room need to be destroyed.
+     * Kill all job remaining in [playerRemoveJobs] and [timerJob]
+     */
+    private fun kill() {
+        playerRemoveJobs.values.forEach { it.cancel() }
+        timerJob?.cancel()
+    }
+
     enum class Phase {
         WAITING_FOR_PLAYER,
         WAITING_FOR_START,
@@ -429,5 +517,9 @@ class Room(
         const val GUESS_SCORE_PERCENTAGE_MULTIPLIER = 50
 
         const val GUESS_SCORE_FOR_DRAWING_PLAYER = 50
+
+        const val PLAYER_REMOVE_TIME = 60000L
     }
 }
+
+typealias PlayerWithIndex = Pair<Player, Int>

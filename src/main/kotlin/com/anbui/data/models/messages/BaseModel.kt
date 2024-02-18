@@ -22,6 +22,7 @@ abstract class BaseModel {
         const val CHOSEN_WORD = "TYPE_CHOSEN_WORD"
         const val GAME_STATE = "TYPE_GAME_STATE"
         const val NEW_WORD = "TYPE_NEW_WORD"
+        const val PLAYER_LIST = "TYPE_PLAYER_LIST"
     }
 }
 
