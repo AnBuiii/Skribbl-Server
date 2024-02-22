@@ -5,15 +5,19 @@ import com.anbui.data.Room
 import com.anbui.data.models.messages.*
 import com.anbui.server
 import com.anbui.session.DrawingSession
-import com.anbui.utils.ResponseMessages
-import com.anbui.utils.baseModelSerializerModule
+import com.anbui.utils.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.server.websocket.*
+import io.ktor.util.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.UUID
 
 /**
  * This function handle *payload* data sent from player to websocket server.
@@ -23,6 +27,8 @@ import kotlinx.serialization.json.Json
  * - [ChosenWord]:
  *
  */
+
+@OptIn(DelicateCoroutinesApi::class)
 fun Route.gameWebSocketRoute() {
     standardWebSocket("/ws/draw") { socket, clientId, message, payload ->
         when (payload) {
@@ -44,10 +50,29 @@ fun Route.gameWebSocketRoute() {
             }
 
             is DrawData -> {
-                val room = server.rooms[payload.roomName] ?: return@standardWebSocket
-                if (room.phase == Room.Phase.GAME_RUNNING) {
-                    room.broadcastToAllExcept(message, clientId)
+//                val room = server.rooms[payload.roomName] ?: return@standardWebSocket
+
+//                println(message)
+                server.players.forEachEntry(1000L) { (t, it) ->
+//                    GlobalScope.launch {
+//                        println(t)
+//                        it.socket.send(Frame.Text(message))
+//                    }
+                    if(it.clientId != clientId){
+                        GlobalScope.launch {
+                            println(t)
+                            it.socket.send(Frame.Text(message))
+                        }
+                    }
+
                 }
+
+//                socket.send(Frame.Text)
+
+
+//                if (room.phase == Room.Phase.GAME_RUNNING) {
+//                    room.broadcastToAllExcept(message, clientId)
+//                }
             }
 
             is ChosenWord -> {
@@ -91,7 +116,12 @@ fun Route.standardWebSocket(
             return@webSocket
         }
 
-        println(session)
+        val player = Player(
+            UUID.randomUUID().toString(),
+            this,
+            session.sessionId
+        )
+        server.playerJoined(player)
 
         try {
             incoming.consumeEach { frame ->
@@ -108,7 +138,7 @@ fun Route.standardWebSocket(
             val playerWithClientId = server.getRoomWithClientId(session.clientId)?.players?.find {
                 it.clientId == session.clientId
             }
-            if(playerWithClientId != null){
+            if (playerWithClientId != null) {
                 server.playerLeft(session.clientId)
             }
         }
