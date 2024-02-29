@@ -5,8 +5,8 @@ import com.anbui.data.Room
 import com.anbui.data.models.messages.*
 import com.anbui.server
 import com.anbui.session.DrawingSession
+import com.anbui.utils.BaseSerializerModule
 import com.anbui.utils.ResponseMessages
-import com.anbui.utils.baseModelSerializerModule
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.server.websocket.*
@@ -51,7 +51,14 @@ fun Route.gameWebSocketRoute() {
                 val room = server.rooms[payload.roomName] ?: return@standardWebSocket
                 if (room.phase == Room.Phase.GAME_RUNNING) {
                     room.broadcastToAllExcept(message, clientId)
+                    room.addDraw(message)
                 }
+            }
+
+            is DrawAction -> {
+                val room = server.getRoomWithClientId(clientId) ?: return@standardWebSocket
+                room.broadcastToAllExcept(message, clientId)
+                room.addDraw(message)
             }
 
             is ChosenWord -> {
@@ -109,7 +116,7 @@ fun Route.standardWebSocket(
             incoming.consumeEach { frame ->
                 if (frame is Frame.Text) {
                     val message = frame.readText()
-                    val format = Json { serializersModule = baseModelSerializerModule }
+                    val format = BaseSerializerModule.baseJson
                     val payload = format.decodeFromString<BaseModel>(message)
                     handleFrame(this, session.sessionId, message, payload)
                 }

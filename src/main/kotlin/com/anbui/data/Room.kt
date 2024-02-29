@@ -67,9 +67,16 @@ class Room(
     private val leftPlayer = ConcurrentHashMap<String, PlayerWithIndex>()
 
     /**
+     *
+     */
+    private var curRoundDrawData: List<String> = emptyList()
+
+    /**
      * listener for phase change
      */
     private var phaseChangeListener: ((Phase) -> Unit)? = null
+
+
     var phase = Phase.WAITING_FOR_PLAYER
         private set(value) {
             synchronized(field) {
@@ -108,6 +115,21 @@ class Room(
                 }
             }
         }
+    }
+
+    /**
+     *
+     */
+    suspend fun sendCurDrawDataToPlayer(player: Player) {
+        if (phase == Phase.GAME_RUNNING || phase == Phase.SHOW_WORD)
+            player.socket.send(Frame.Text(BaseSerializerModule.baseJson.encodeToString(curRoundDrawData)))
+    }
+
+    /**
+     * add a [DrawData] or [DrawAction] deserialized
+     */
+    fun addDraw(drawInfo: String) {
+        curRoundDrawData += drawInfo
     }
 
     /**
@@ -159,6 +181,7 @@ class Room(
 
         sendWordToPlayer(player)
         broadcastPlayersState()
+        sendCurDrawDataToPlayer(player)
         broadcast(Json.encodeToString(announcement))
         return player
     }
@@ -323,6 +346,7 @@ class Room(
      */
     @OptIn(DelicateCoroutinesApi::class)
     private fun newRound() {
+        curRoundDrawData = emptyList()
         curWords = getRandomWord(GUESS_WORD_SIZE).also { randomWords ->
             val newWords = NewWords(randomWords)
             nextDrawingPlayer()

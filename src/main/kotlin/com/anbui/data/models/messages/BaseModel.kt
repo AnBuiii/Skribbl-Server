@@ -26,5 +26,6 @@ abstract class BaseModel {
         const val PING = "TYPE_PING"
         const val DISCONNECT = "TYPE_DISCONNECT"
         const val DRAW_ACTION = "TYPE_DRAW_ACTION"
+        const val CUR_ROUND_DRAW_INFO = "TYPE_CUR_ROUND_DRAW_INFO"
     }
 }
