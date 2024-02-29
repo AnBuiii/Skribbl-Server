@@ -22,6 +22,7 @@ val baseModelSerializerModule = SerializersModule {
         subclass(GameState::class)
         subclass(NewWords::class)
         subclass(Ping::class)
+        subclass(Disconnect::class)
         defaultDeserializer { NotBaseModel.serializer() }
     }
 }

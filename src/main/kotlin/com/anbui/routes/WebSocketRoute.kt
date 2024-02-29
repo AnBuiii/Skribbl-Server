@@ -69,6 +69,10 @@ fun Route.gameWebSocketRoute() {
             is Ping -> {
                 server.players[clientId]?.receivePong()
             }
+
+            is Disconnect -> {
+                server.playerLeft(clientId, true)
+            }
         }
     }
 }
