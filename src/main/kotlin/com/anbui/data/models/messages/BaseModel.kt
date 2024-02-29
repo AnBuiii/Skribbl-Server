@@ -23,7 +23,6 @@ abstract class BaseModel {
         const val GAME_STATE = "TYPE_GAME_STATE"
         const val NEW_WORD = "TYPE_NEW_WORD"
         const val PLAYER_LIST = "TYPE_PLAYER_LIST"
+        const val PING = "TYPE_PING"
     }
 }
-
-

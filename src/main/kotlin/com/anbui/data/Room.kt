@@ -112,11 +112,34 @@ class Room(
 
     /**
      * Add new player to the room and update [phase].
+     * if player rejoin the room [leftPlayer], add player in last index
      * [players] are shuffled in [Phase.WAITING_FOR_START] to make game fair
      */
     suspend fun addPlayer(clientId: String, username: String, socketSession: WebSocketSession): Player {
-        val player = Player(username = username, socket = socketSession, clientId = clientId)
-        players = players + player
+        var indexToAdd = players.size - 1
+
+        val player =
+            leftPlayer[clientId]?.let {
+                it.first.apply {
+                    socket = socketSession
+                    isDrawing = drawingPlayer?.clientId == clientId
+                    indexToAdd = it.second
+
+                    playerRemoveJobs[clientId]?.cancel()
+                    playerRemoveJobs.remove(clientId)
+                    leftPlayer.remove(clientId)
+                }
+            }
+                ?: Player(username = username, socket = socketSession, clientId = clientId)
+        indexToAdd = when {
+            players.isEmpty() -> 0
+            indexToAdd >= players.size -> players.size - 1
+            else -> indexToAdd
+        }
+
+        val tempPlayers = players.toMutableList()
+        tempPlayers.add(indexToAdd, player)
+        players = tempPlayers
 
         if (players.size == 1) {
             phase = Phase.WAITING_FOR_PLAYER
