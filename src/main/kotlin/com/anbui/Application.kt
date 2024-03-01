@@ -1,5 +1,6 @@
 package com.anbui
 
+import com.anbui.data.local.SkribblDatabase
 import com.anbui.plugins.*
 import io.ktor.server.application.*
 
@@ -11,6 +12,7 @@ val server = DrawingServer()
 
 @Suppress("unused")
 fun Application.module() {
+    SkribblDatabase.init()
     configSession()
     configureSerialization()
     configureSockets()

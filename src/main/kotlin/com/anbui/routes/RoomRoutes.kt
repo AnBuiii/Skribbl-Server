@@ -110,7 +110,8 @@ fun Route.joinRoomRoute() {
         }
 
         // check if room not found
-        val room = server.rooms[roomName] ?: run {
+        val roomNameFix = roomName.replace("_", " ")
+        val room = server.rooms[roomNameFix] ?: run {
             call.respond(
                 HttpStatusCode.OK,
                 BasicApiResponse(false, ResponseMessages.ROOM_NOT_FOUND)

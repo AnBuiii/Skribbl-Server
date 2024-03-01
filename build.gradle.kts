@@ -30,4 +30,10 @@ dependencies {
     implementation(libs.logback)
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.kotlin.test.junit)
+
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.dao)
+
+    implementation(libs.h2.database)
 }
