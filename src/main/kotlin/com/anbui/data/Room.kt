@@ -76,6 +76,8 @@ class Room(
      */
     private var phaseChangeListener: ((Phase) -> Unit)? = null
 
+    var lastDrawData: DrawData? = null
+
 
     var phase = Phase.WAITING_FOR_PLAYER
         private set(value) {
@@ -117,12 +119,21 @@ class Room(
         }
     }
 
+    suspend fun finishOffDrawing() {
+        lastDrawData?.let {
+            if (curRoundDrawData.isNotEmpty() && it.motionEvent == DrawData.MOTION_DRAWING) {
+                val finishDrawData = it.copy(motionEvent = DrawData.MOTION_UP)
+                broadcast(Json.encodeToString(finishDrawData))
+            }
+        }
+    }
+
     /**
      *
      */
     suspend fun sendCurDrawDataToPlayer(player: Player) {
         if (phase == Phase.GAME_RUNNING || phase == Phase.SHOW_WORD)
-            player.socket.send(Frame.Text(BaseSerializerModule.baseJson.encodeToString(curRoundDrawData)))
+            player.socket.send(Frame.Text(BaseSerializerModule.baseJson.encodeToString(CurRoundDrawInfo(curRoundDrawData))))
     }
 
     /**
@@ -256,8 +267,16 @@ class Room(
 
             phase = when (phase) {
                 Phase.WAITING_FOR_PLAYER -> Phase.NEW_ROUND
-                Phase.NEW_ROUND -> Phase.GAME_RUNNING
-                Phase.GAME_RUNNING -> Phase.SHOW_WORD
+                Phase.NEW_ROUND -> {
+                    word = null
+                    Phase.GAME_RUNNING
+                }
+
+                Phase.GAME_RUNNING -> {
+                    finishOffDrawing()
+                    Phase.SHOW_WORD
+                }
+
                 Phase.SHOW_WORD -> Phase.NEW_ROUND
                 else -> Phase.WAITING_FOR_PLAYER
             }

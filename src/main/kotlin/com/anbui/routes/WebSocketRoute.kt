@@ -53,6 +53,7 @@ fun Route.gameWebSocketRoute() {
                     room.broadcastToAllExcept(message, clientId)
                     room.addDraw(message)
                 }
+                room.lastDrawData = payload
             }
 
             is DrawAction -> {

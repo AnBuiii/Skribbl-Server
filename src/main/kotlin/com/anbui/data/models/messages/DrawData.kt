@@ -26,4 +26,9 @@ data class DrawData(
     val toX: Float,
     val toY: Float,
     val motionEvent: Int
-) : BaseModel()
+) : BaseModel() {
+    companion object {
+        const val MOTION_UP = 1
+        const val MOTION_DRAWING = 2
+    }
+}
