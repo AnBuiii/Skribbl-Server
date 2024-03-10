@@ -77,7 +77,7 @@ fun Route.createRoomRoute() {
  */
 fun Route.getRoomRoute() {
     get("api/getRooms") {
-        val searchQuery = call.parameters["searchQuery"]
+        val searchQuery = call.parameters["roomQuery"]
         if (searchQuery == null) {
             call.respond(HttpStatusCode.BadRequest)
             return@get

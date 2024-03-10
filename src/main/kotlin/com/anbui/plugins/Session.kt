@@ -14,12 +14,14 @@ fun Application.configSession() {
         cookie<DrawingSession>("SESSIONS")
     }
 
-    // Interceptor
-    intercept(ApplicationCallPipeline.Plugins) {
+    install(sessionInterceptorPlugin)
+}
+
+val sessionInterceptorPlugin = createApplicationPlugin("sessionInterceptorPlugin") {
+    onCall { call ->
         if (call.sessions.get<DrawingSession>() == null) {
             val clientId = call.parameters["client"] ?: ""
             call.sessions.set(DrawingSession(clientId, generateNonce()))
         }
     }
 }
-
