@@ -14,7 +14,7 @@ import kotlinx.serialization.modules.subclass
 
 
 object BaseSerializerModule {
-    val baseModelSerializerModule = SerializersModule {
+    private val baseModelSerializerModule = SerializersModule {
         polymorphic(BaseModel::class) {
             subclass(ChatMessage::class)
             subclass(DrawData::class)

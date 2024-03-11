@@ -7,13 +7,12 @@ import com.anbui.server
 import com.anbui.session.DrawingSession
 import com.anbui.utils.BaseSerializerModule
 import com.anbui.utils.ResponseMessages
+import com.anbui.utils.send
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 /**
  * This function handle *payload* data sent from player to websocket server.
@@ -28,8 +27,9 @@ fun Route.gameWebSocketRoute() {
         when (payload) {
             is JoinRoomHandshake -> {
                 val room = server.rooms[payload.roomName] ?: run {
+                    println(payload.roomName)
                     val gameError = GameError(GameError.ERROR_ROOM_NOT_FOUND)
-                    socket.send(Frame.Text(Json.encodeToString(gameError)))
+                    socket.send(gameError)
                     return@standardWebSocket
                 }
                 val player = Player(

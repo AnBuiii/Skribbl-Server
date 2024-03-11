@@ -123,7 +123,7 @@ class Room(
         lastDrawData?.let {
             if (curRoundDrawData.isNotEmpty() && it.motionEvent == DrawData.MOTION_DRAWING) {
                 val finishDrawData = it.copy(motionEvent = DrawData.MOTION_UP)
-                broadcast(Json.encodeToString(finishDrawData))
+                broadcast(finishDrawData)
             }
         }
     }
@@ -184,7 +184,7 @@ class Room(
             players = players.shuffled()
         }
 
-        val announcement = Announcement(
+        val announcement: BaseModel = Announcement(
             message = "$username ${ResponseMessages.PLAYER_JOIN}",
             System.currentTimeMillis(),
             Announcement.PLAYER_JOINED
@@ -193,7 +193,7 @@ class Room(
         sendWordToPlayer(player)
         broadcastPlayersState()
         sendCurDrawDataToPlayer(player)
-        broadcast(Json.encodeToString(announcement))
+        broadcast(announcement)
         return player
     }
 
@@ -228,7 +228,7 @@ class Room(
 
         GlobalScope.launch {
             broadcastPlayersState()
-            broadcast(Json.encodeToString(announcement))
+            broadcast(announcement)
 
             if (players.size == 1) {
                 phase = Phase.WAITING_FOR_PLAYER
@@ -260,7 +260,7 @@ class Room(
                 if (it != 0) {
                     phaseChange.phase = null
                 }
-                broadcast(Json.encodeToString(phaseChange))
+                broadcast(phaseChange)
                 phaseChange.timeStamp -= UPDATE_TIME_FREQUENCY
                 delay(UPDATE_TIME_FREQUENCY)
             }
@@ -305,10 +305,26 @@ class Room(
         }
     }
 
+    suspend fun broadcast(baseModel: BaseModel) {
+        players.forEach { player ->
+            if (player.socket.isActive) {
+                player.socket.send(baseModel)
+            }
+        }
+    }
+
     suspend fun broadcastToAllExcept(message: String, clientId: String) {
         players.forEach { player ->
             if (player.socket.isActive && player.clientId != clientId) {
                 player.socket.send(Frame.Text(message))
+            }
+        }
+    }
+
+    suspend fun broadcastToAllExcept(baseModel: BaseModel, clientId: String) {
+        players.forEach { player ->
+            if (player.socket.isActive && player.clientId != clientId) {
+                player.socket.send(baseModel)
             }
         }
     }
@@ -340,7 +356,7 @@ class Room(
                 Phase.WAITING_FOR_PLAYER,
                 DELAY_WAITING_FOR_START_NEW_ROUND
             )
-            broadcast(Json.encodeToString(phaseChange))
+            broadcast(phaseChange)
         }
     }
 
@@ -355,7 +371,7 @@ class Room(
                 Phase.WAITING_FOR_PLAYER,
                 DELAY_WAITING_FOR_START_NEW_ROUND
             )
-            broadcast(Json.encodeToString(phaseChange))
+            broadcast(phaseChange)
         }
     }
 
@@ -370,7 +386,7 @@ class Room(
             val newWords = NewWords(randomWords)
             nextDrawingPlayer()
             GlobalScope.launch {
-                drawingPlayer?.socket?.send(Frame.Text(Json.encodeToString(newWords)))
+                drawingPlayer?.socket?.send(newWords)
                 timeAndNotify(DELAY_NEW_ROUND_TO_GAME_RUNNING)
             }
         }
@@ -399,10 +415,10 @@ class Room(
         )
         GlobalScope.launch {
             broadcastToAllExcept(
-                Json.encodeToString(gameStateForGuessPlayer),
+                gameStateForGuessPlayer,
                 (drawingPlayer ?: players.random()).clientId
             )
-            drawingPlayer?.socket?.send(Frame.Text(Json.encodeToString(gameStateForDrawingPlayer)))
+            drawingPlayer?.socket?.send(gameStateForDrawingPlayer)
         }
     }
 
@@ -418,16 +434,16 @@ class Room(
                 }
             }
             broadcastPlayersState()
-            word?.let {
-                val chosenWord = ChosenWord
-                broadcast(Json.encodeToString(chosenWord))
+            word?.let { w ->
+                val chosenWord = ChosenWord(w, roomName = name)
+                broadcast(chosenWord)
             }
             timeAndNotify(DELAY_SHOW_WORD_TO_NEW_ROUND)
             val phaseChange = PhaseChange(
                 Phase.SHOW_WORD,
                 DELAY_WAITING_FOR_START_NEW_ROUND
             )
-            broadcast(Json.encodeToString(phaseChange))
+            broadcast(phaseChange)
         }
     }
 
@@ -472,7 +488,7 @@ class Room(
                 announcementType = Announcement.PLAYER_GUEST_WORD
             )
 
-            broadcast(Json.encodeToString(announcement))
+            broadcast(announcement)
 
             val isRoundOver = addWiningPlayer(message.from)
 
@@ -482,7 +498,7 @@ class Room(
                     timeStamp = System.currentTimeMillis(),
                     announcementType = Announcement.EVERY_BODY_GUESS_IT
                 )
-                broadcast(Json.encodeToString(roundOverAnnouncement))
+                broadcast(roundOverAnnouncement)
             }
         }
         return false
@@ -532,7 +548,7 @@ class Room(
                 player.socket.send(Frame.Text(Json.encodeToString(gameState)))
             }
         }
-        player.socket.send(Frame.Text(Json.encodeToString(Json.encodeToString(phaseChange))))
+        player.socket.send(phaseChange)
 
     }
 
