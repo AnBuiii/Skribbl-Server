@@ -2,18 +2,18 @@ package com.anbui.utils
 
 import java.io.File
 
-val words = readWordList("resources/programmer_wordlist.txt")
+val words = readWordList("src/main/resources/wordlist.txt")
 
 /**
  * read word from static resource
  */
 fun readWordList(fileName: String): List<String> {
     val inputStream = File(fileName).inputStream()
-    val words = mutableListOf<String>()
+    val readWords = mutableListOf<String>()
     inputStream.bufferedReader().forEachLine {
-        words.add(it)
+        readWords.add(it)
     }
-    return words
+    return readWords
 }
 
 /**
