@@ -428,6 +428,7 @@ class Room(
                 (drawingPlayer ?: players.random()).clientId
             )
             drawingPlayer?.socket?.send(gameStateForDrawingPlayer)
+            timeAndNotify(DELAY_GAME_RUNNING_TO_SHOW_WORD)
         }
     }
 
