@@ -518,7 +518,7 @@ class Room(
                     rank = idx + 1
                 )
             }
-        broadcast(Json.encodeToString(playerList))
+        broadcast(PlayerList(playerList))
     }
 
     /**

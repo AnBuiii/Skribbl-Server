@@ -2,10 +2,9 @@ package com.anbui.data
 
 import com.anbui.data.models.messages.Ping
 import com.anbui.server
+import com.anbui.utils.send
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 /**
  * Represent a player of this game
@@ -56,7 +55,7 @@ data class Player(
     private suspend fun sendPing() {
         pingTime = System.currentTimeMillis()
 
-        socket.send(Frame.Text(Json.encodeToString(Ping())))
+        socket.send(Ping())
         delay(PING_FREQUENCY)
 
         if (pingTime - pongTime > PING_FREQUENCY) {

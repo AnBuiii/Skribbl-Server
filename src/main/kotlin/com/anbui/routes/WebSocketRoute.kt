@@ -119,7 +119,7 @@ fun Route.standardWebSocket(
                     val message = frame.readText()
                     val format = BaseSerializerModule.baseJson
                     val payload = format.decodeFromString<BaseModel>(message)
-                    handleFrame(this, session.sessionId, message, payload)
+                    handleFrame(this, session.clientId, message, payload)
                 }
             }
         } catch (e: Exception) {

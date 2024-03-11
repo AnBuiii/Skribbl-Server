@@ -28,6 +28,7 @@ object BaseSerializerModule {
             subclass(Ping::class)
             subclass(Disconnect::class)
             subclass(DrawAction::class)
+            subclass(PlayerList::class)
             defaultDeserializer { NotBaseModel.serializer() }
         }
     }
