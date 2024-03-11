@@ -83,6 +83,7 @@ class Room(
         private set(value) {
             synchronized(field) {
                 field = value
+                println("phase: " + value)
                 phaseChangeListener?.let { change ->
                     change(value)
                 }
@@ -175,11 +176,14 @@ class Room(
         players = tempPlayers
 
         if (players.size == 1) {
+            println("not")
             phase = Phase.WAITING_FOR_PLAYER
         } else if (players.size == Constants.MIN_ROOM_SIZE && phase == Phase.WAITING_FOR_PLAYER) {
+            println("ready")
             phase = Phase.WAITING_FOR_START
             players = players.shuffled()
         } else if (players.size == Constants.MAX_ROOM_SIZE && phase == Phase.WAITING_FOR_START) {
+            println("go")
             phase = Phase.NEW_ROUND
             players = players.shuffled()
         }
@@ -256,7 +260,9 @@ class Room(
                 ms,
                 drawingPlayer?.username
             )
-            repeat((ms / UPDATE_TIME_FREQUENCY).toInt()) {
+            val times = (ms / UPDATE_TIME_FREQUENCY).toInt()
+            println("notify $times")
+            repeat(times) {
                 if (it != 0) {
                     phaseChange.phase = null
                 }
@@ -266,7 +272,7 @@ class Room(
             }
 
             phase = when (phase) {
-                Phase.WAITING_FOR_PLAYER -> Phase.NEW_ROUND
+                Phase.WAITING_FOR_START -> Phase.NEW_ROUND
                 Phase.NEW_ROUND -> {
                     word = null
                     Phase.GAME_RUNNING
@@ -365,10 +371,11 @@ class Room(
      */
     @OptIn(DelicateCoroutinesApi::class)
     private fun waitingForStart() {
+        println("wait start")
         timeAndNotify(DELAY_WAITING_FOR_START_NEW_ROUND)
         GlobalScope.launch {
             val phaseChange = PhaseChange(
-                Phase.WAITING_FOR_PLAYER,
+                Phase.WAITING_FOR_START,
                 DELAY_WAITING_FOR_START_NEW_ROUND
             )
             broadcast(phaseChange)
@@ -381,6 +388,7 @@ class Room(
      */
     @OptIn(DelicateCoroutinesApi::class)
     private fun newRound() {
+        println("new word")
         curRoundDrawData = emptyList()
         curWords = getRandomWord(GUESS_WORD_SIZE).also { randomWords ->
             val newWords = NewWords(randomWords)
@@ -401,6 +409,7 @@ class Room(
      */
     @OptIn(DelicateCoroutinesApi::class)
     private fun gameRunning() {
+        println("running phase")
         winningPLayers = emptyList()
         val wordToSend = word ?: curWords?.random() ?: words.random()
         val transformedWord = wordToSend.transformToUnderscores()
