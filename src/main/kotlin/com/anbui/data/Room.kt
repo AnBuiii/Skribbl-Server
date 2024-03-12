@@ -556,7 +556,7 @@ class Room(
                     }
                 )
 
-                player.socket.send(Frame.Text(Json.encodeToString(gameState)))
+                player.socket.send(gameState)
             }
         }
         player.socket.send(phaseChange)
