@@ -50,7 +50,7 @@ fun Route.gameWebSocketRoute() {
             is DrawData -> {
                 val room = server.rooms[payload.roomName] ?: return@standardWebSocket
                 if (room.phase == Room.Phase.GAME_RUNNING) {
-                    room.broadcastToAllExcept(message, clientId)
+                    room.broadcastToAllExcept(payload, clientId)
                     room.addDraw(message)
                 }
                 room.lastDrawData = payload

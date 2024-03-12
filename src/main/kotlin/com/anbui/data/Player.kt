@@ -44,7 +44,6 @@ data class Player(
         pingJob = GlobalScope.launch {
             while (true) {
                 sendPing()
-                delay(PING_FREQUENCY)
             }
         }
     }

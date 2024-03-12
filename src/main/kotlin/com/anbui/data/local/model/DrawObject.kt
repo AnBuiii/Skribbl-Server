@@ -8,10 +8,8 @@ object DrawObject : Table() {
 
     val color = integer("color")
     val thickness = float("thickness")
-    val fromX = float("fromX")
-    val fromY = float("fromY")
-    val toX = float("toX")
-    val toY = float("toY")
+    val x = float("x")
+    val y = float("y")
     val motionEvent = integer("motionEvent")
 
     override val primaryKey = PrimaryKey(id)

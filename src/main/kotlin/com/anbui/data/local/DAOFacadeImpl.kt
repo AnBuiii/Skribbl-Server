@@ -12,10 +12,8 @@ class DAOFacadeImpl : DAOFacade {
         roomName = row[DrawObject.roomName],
         color = row[DrawObject.color],
         thickness = row[DrawObject.thickness],
-        fromX = row[DrawObject.fromX],
-        fromY = row[DrawObject.fromY],
-        toX = row[DrawObject.toX],
-        toY = row[DrawObject.toY],
+        x = row[DrawObject.x],
+        y = row[DrawObject.y],
         motionEvent = row[DrawObject.motionEvent]
     )
 
@@ -41,10 +39,8 @@ class DAOFacadeImpl : DAOFacade {
             it[roomName] = drawData.roomName
             it[color] = drawData.color
             it[thickness] = drawData.thickness
-            it[fromX] = drawData.fromX
-            it[fromX] = drawData.fromY
-            it[toX] = drawData.toX
-            it[toY] = drawData.toY
+            it[x] = drawData.x
+            it[y] = drawData.y
             it[motionEvent] = drawData.motionEvent
         }
         return insertStatement.resultedValues?.singleOrNull()?.let(::resultRowToArticle)
