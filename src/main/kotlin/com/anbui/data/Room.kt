@@ -510,6 +510,7 @@ class Room(
                 )
                 broadcast(roundOverAnnouncement)
             }
+            return true
         }
         return false
     }
