@@ -463,7 +463,7 @@ class Room(
     private fun addWiningPlayer(username: String): Boolean {
         winningPLayers = winningPLayers + username
         if (winningPLayers.size == players.size - 1) {
-            phase = Phase.NEW_ROUND
+            phase = Phase.SHOW_WORD
             return true
         }
         return false
