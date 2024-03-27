@@ -1,8 +1,11 @@
 package com.anbui.data
 
+import com.anbui.data.models.Line
 import com.anbui.data.models.messages.*
 import com.anbui.server
 import com.anbui.utils.*
+import com.anbui.utils.converter.toLine
+import com.anbui.utils.converter.toLineData
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
@@ -17,6 +20,10 @@ class Room(
     val maxPlayer: Int,
     var players: List<Player> = listOf()
 ) {
+
+    private var lines: MutableList<Line> = mutableListOf()
+
+    private val history: History = History()
 
     /**
      * Job for game's countdown timer
@@ -129,12 +136,51 @@ class Room(
         }
     }
 
+    fun addLine(line: LineData) {
+        history.push(Command.DrawCommand(line.toLine()), Memento(this))
+    }
+
+    suspend fun onAction(action: DrawAction) {
+        when (action.action) {
+            DrawAction.ACTION_REDO -> {
+                redo()
+            }
+
+            DrawAction.ACTION_UNDO -> {
+                undo()
+            }
+
+            DrawAction.ACTION_CLEAR -> {
+                clear()
+            }
+        }
+    }
+
+    private suspend fun undo() {
+        if (history.undo()) {
+            // TODO history broadcast
+        } else {
+
+        }
+
+    }
+
+    private suspend fun redo() {
+        if (history.redo()) {
+            // TODO history broadcast
+        } else {
+
+        }
+    }
+
+    private fun clear() {}
+
     /**
      *
      */
     suspend fun sendCurDrawDataToPlayer(player: Player) {
         if (phase == Phase.GAME_RUNNING || phase == Phase.SHOW_WORD)
-            player.socket.send(Frame.Text(BaseSerializerModule.baseJson.encodeToString(CurRoundDrawInfo(curRoundDrawData))))
+            player.sendSomething(CurRoundDrawInfo(curRoundDrawData))
     }
 
     /**
@@ -155,7 +201,7 @@ class Room(
         val player =
             leftPlayer[clientId]?.let {
                 it.first.apply {
-                    socket = socketSession
+                    setSession(socketSession)
                     isDrawing = drawingPlayer?.clientId == clientId
                     indexToAdd = it.second
 
@@ -301,36 +347,13 @@ class Room(
     }
 
     /**
-     * Send [message] to all player in room if they are active
+     * Send message encrypted in [baseModel] to player in room if they are active
+     * @param exceptClient (optional) except a player with matches id
      */
-    suspend fun broadcast(message: String) {
+    suspend fun broadcast(baseModel: BaseModel, exceptClient: String? = null) {
         players.forEach { player ->
-            if (player.socket.isActive) {
-                player.socket.send(Frame.Text(message))
-            }
-        }
-    }
-
-    suspend fun broadcast(baseModel: BaseModel) {
-        players.forEach { player ->
-            if (player.socket.isActive) {
-                player.socket.send(baseModel)
-            }
-        }
-    }
-
-    suspend fun broadcastToAllExcept(message: String, clientId: String) {
-        players.forEach { player ->
-            if (player.socket.isActive && player.clientId != clientId) {
-                player.socket.send(Frame.Text(message))
-            }
-        }
-    }
-
-    suspend fun broadcastToAllExcept(baseModel: BaseModel, clientId: String) {
-        players.forEach { player ->
-            if (player.socket.isActive && player.clientId != clientId) {
-                player.socket.send(baseModel)
+            if (player.clientId != exceptClient) {
+                player.sendSomething(baseModel)
             }
         }
     }
@@ -394,7 +417,7 @@ class Room(
             val newWords = NewWords(randomWords)
             nextDrawingPlayer()
             GlobalScope.launch {
-                drawingPlayer?.socket?.send(newWords)
+                drawingPlayer?.sendSomething(newWords)
                 timeAndNotify(DELAY_NEW_ROUND_TO_GAME_RUNNING)
             }
         }
@@ -423,11 +446,11 @@ class Room(
             transformedWord
         )
         GlobalScope.launch {
-            broadcastToAllExcept(
+            broadcast(
                 gameStateForGuessPlayer,
                 (drawingPlayer ?: players.random()).clientId
             )
-            drawingPlayer?.socket?.send(gameStateForDrawingPlayer)
+            drawingPlayer?.sendSomething(gameStateForDrawingPlayer)
             timeAndNotify(DELAY_GAME_RUNNING_TO_SHOW_WORD)
         }
     }
@@ -556,10 +579,10 @@ class Room(
                     }
                 )
 
-                player.socket.send(gameState)
+                player.sendSomething(gameState)
             }
         }
-        player.socket.send(phaseChange)
+        player.sendSomething(phaseChange)
 
     }
 
@@ -583,6 +606,31 @@ class Room(
     private fun kill() {
         playerRemoveJobs.values.forEach { it.cancel() }
         timerJob?.cancel()
+    }
+
+    fun createBackup(): String {
+        try {
+            val json = Json.encodeToString(lines)
+            return json
+        } catch (e: Exception) {
+            return "" // TODO some error
+        }
+
+    }
+
+    suspend fun loadBackup(backup: String) {
+        try {
+            lines = Json.decodeFromString(backup)
+
+            val lineData = lines.map { it.toLineData(roomName = name) }
+            val drawState = DrawState(lineData)
+
+
+            broadcast(drawState)
+        } catch (e: Exception) {
+            // TODO broadcast load backup error
+        }
+
     }
 
     enum class Phase {

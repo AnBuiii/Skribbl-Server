@@ -42,7 +42,7 @@ fun Route.gameWebSocketRoute() {
                     room.addPlayer(player.clientId, player.username, socket)
                 } else {
                     val playerInRoom = room.players.find { it.clientId == clientId }
-                    playerInRoom?.socket = socket
+                    playerInRoom?.setSession(socket)
                     playerInRoom?.startPing()
                 }
             }
@@ -50,15 +50,23 @@ fun Route.gameWebSocketRoute() {
             is DrawData -> {
                 val room = server.rooms[payload.roomName] ?: return@standardWebSocket
                 if (room.phase == Room.Phase.GAME_RUNNING) {
-                    room.broadcastToAllExcept(payload, clientId)
+                    room.broadcast(payload, clientId)
                     room.addDraw(message)
                 }
                 room.lastDrawData = payload
             }
 
+            is LineData -> {
+                val room = server.rooms[payload.roomName] ?: return@standardWebSocket
+                if (room.phase == Room.Phase.GAME_RUNNING) {
+//                    room.broadcastToAllExcept(payload, clientId)  TODO broadcast something
+                    room.addLine(payload)
+                }
+            }
+
             is DrawAction -> {
                 val room = server.getRoomWithClientId(clientId) ?: return@standardWebSocket
-                room.broadcastToAllExcept(message, clientId)
+                room.broadcast(payload, exceptClient = clientId)
                 room.addDraw(message)
             }
 
@@ -70,7 +78,7 @@ fun Route.gameWebSocketRoute() {
             is ChatMessage -> {
                 val room = server.rooms[payload.roomName] ?: return@standardWebSocket
                 if (!room.checkWordAndNotifyPlayer(payload)) {
-                    room.broadcast(message)
+                    room.broadcast(payload) // TODO check
                 }
             }
 

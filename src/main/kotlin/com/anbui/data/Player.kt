@@ -1,5 +1,6 @@
 package com.anbui.data
 
+import com.anbui.data.models.messages.BaseModel
 import com.anbui.data.models.messages.Ping
 import com.anbui.server
 import com.anbui.utils.send
@@ -14,7 +15,7 @@ import kotlinx.coroutines.*
  */
 data class Player(
     val username: String,
-    var socket: WebSocketSession,
+    private var socket: WebSocketSession,
     val clientId: String,
     var isDrawing: Boolean = false,
     var score: Int = 0,
@@ -37,6 +38,10 @@ data class Player(
 
     var isOnline = true
 
+    fun setSession(socket: WebSocketSession){
+        this.socket = socket;
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
     fun startPing() {
         pingJob?.cancel()
@@ -54,7 +59,7 @@ data class Player(
     private suspend fun sendPing() {
         pingTime = System.currentTimeMillis()
 
-        socket.send(Ping())
+        sendSomething(Ping())
         delay(PING_FREQUENCY)
 
         if (pingTime - pongTime > PING_FREQUENCY) {
@@ -77,6 +82,12 @@ data class Player(
      */
     fun disconnect() {
         pingJob?.cancel()
+    }
+
+    suspend fun sendSomething(baseModel: BaseModel) {
+        if (socket.isActive) {
+            socket.send(baseModel)
+        }
     }
 
     companion object {

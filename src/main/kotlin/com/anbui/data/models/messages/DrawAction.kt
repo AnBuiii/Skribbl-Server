@@ -12,5 +12,7 @@ data class DrawAction(
         const val ACTION_CLEAR = 0
 
         const val ACTION_UNDO = 1
+
+        const val ACTION_REDO = 2
     }
 }

@@ -27,5 +27,7 @@ abstract class BaseModel {
         const val DISCONNECT = "TYPE_DISCONNECT"
         const val DRAW_ACTION = "TYPE_DRAW_ACTION"
         const val CUR_ROUND_DRAW_INFO = "TYPE_CUR_ROUND_DRAW_INFO"
+        const val LINE_DATA = "TYPE_LINE_DATA"
+        const val DRAW_STATE = "TYPE_DRAW_STATE"
     }
 }
